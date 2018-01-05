@@ -5,5 +5,11 @@
       locale: ja_JP.UTF-8
       zone: Asia/Tokyo
       zoneinfo_path: /usr/share/zoneinfo/Asia/Tokyo
+      nginx_site_template: "wordpress"
+      nginx_basic_authentifications:
+        - template: basic
+          dest: /etc/nginx/password/basic
   roles:
     - role: lig-ansible-localize
+    - role: lig-ansible-nginx
+      tags: ['web', 'nginx']

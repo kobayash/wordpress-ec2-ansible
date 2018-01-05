@@ -1,0 +1,80 @@
+server {
+  listen 80 default;
+  server_name _;
+
+  root /var/www/html;
+
+  index index.php index.html index.htm;
+
+  charset utf-8;
+  client_max_body_size 24M;
+  location = /favicon.ico          { access_log off; log_not_found off; }
+  location = /robots.txt           { access_log off; log_not_found off; }
+  location = /apple-touch-icon.png { access_log off; log_not_found off; }
+  location = /apple-touch-icon-precomposed.png { access_log off; log_not_found off; }
+  location ~ /\. { deny all; access_log off; log_not_found off; }
+  location ^~ /license.txt          { deny all; access_log off; log_not_found off; }
+  location ^~ /readme.html          { deny all; access_log off; log_not_found off; }
+  location ^~ /readme-ja.html       { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-activate.php      { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-blog-header.php   { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-comments-post.php { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-config.php        { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-links-opml.php    { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-load.php          { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-mail.php          { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-settings.php      { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-signup.php        { deny all; access_log off; log_not_found off; }
+  location ^~ /wp-trackback.php     { deny all; access_log off; log_not_found off; }
+  location ^~ /xmlrpc.php           { deny all; access_log off; log_not_found off; }
+ 
+  # 管理画面
+  # 下記ディレクティブより後にもっていくとphpが表示されてしまうので注意
+  location ~* /wp-login\.php|/wp-admin/((?!admin-ajax\.php).)*$ {
+    auth_basic "Restricted";
+    auth_basic_user_file "/etc/nginx/password/basic";
+    if ($http_user_agent ~ ELB\-HealthChecker) { access_log off; }
+
+    fastcgi_index index.php;
+    fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    fastcgi_param WP_ENV production;
+    include  fastcgi_params;
+
+    if ($request_filename ~ .*\.php) {
+      fastcgi_pass unix:/var/run/php-fpm.sock;
+    }
+  }
+
+  # フロント側php
+  location ~* \.php$ {
+    auth_basic "Restricted";
+    auth_basic_user_file "/etc/nginx/password/basic";
+    set $mobile '';
+    if ($http_user_agent ~* '(iPhone|iPod|incognito|webmate|Android|dream|CUPCAKE|froyo|BlackBerry|webOS|s8000|bada|IEMobile|Googlebot\\-Mobile|AdsBot\\-Google)') { set $mobile '@smartphone'; }
+    if ($http_cookie ~* "wptouch(_switch_cookie=normal|-pro-view=desktop)") { set $mobile "@smartphone.desktop"; }
+    set $do_not_cache 0;
+    if ($http_cookie ~* "comment_author_|wordpress_( !test_cookie)|wp-postpass_" ) { set $do_not_cache 1; }
+    if ($request_method = POST) { set $do_not_cache 1; }
+    fastcgi_no_cache     $do_not_cache;
+    fastcgi_cache_bypass $do_not_cache;
+    fastcgi_cache        one;
+    fastcgi_cache_key    "$scheme://$host$request_uri$mobile";
+    fastcgi_cache_valid  200 5m;
+    fastcgi_cache_valid  404 5m;
+    fastcgi_cache_valid  301 1h;
+    fastcgi_pass unix:/var/run/php-fpm.sock;
+    fastcgi_index index.php;
+    fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    include       fastcgi_params;
+    if ($http_user_agent ~ ELB\-HealthChecker) { access_log off; }
+  }
+
+  location ~* \.(css|CSS|js|JS|jpg|JPG|gif|GIF|png|PNG|swf|SWF|inc|INC|ico|ICO|svg|SVG|woff|WOFF)$ {
+    expires 30d;
+  }
+
+  location / {
+    try_files $uri $uri/ /index.php$is_args$args;
+  }
+}
+

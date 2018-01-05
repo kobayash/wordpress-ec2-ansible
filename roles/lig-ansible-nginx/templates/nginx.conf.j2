@@ -1,0 +1,87 @@
+#{{ ansible_managed }}
+{% if ansible_os_family == 'RedHat' %} 
+user              {{ nginx_user }};
+{% endif %}
+{% if ansible_os_family == 'Debian' %} 
+user              www-data;
+{% endif %}
+
+worker_processes  {{ nginx_worker_processes }};
+pid        /var/run/nginx.pid;
+
+# 1プロセスあたりのファイルディスクリプタの上限
+worker_rlimit_nofile {{ nginx_worker_rlimit_nofile }};
+
+events {
+    worker_connections {{ nginx_worker_connections }};
+    multi_accept on;
+    use epoll;
+}
+
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    # Version番号非表示
+    server_tokens off;
+
+
+    # sendfile()APIを利用して通信するようになる。
+    sendfile       on;
+    tcp_nopush     on;
+
+    # ELBの後ろなら120が推奨。
+    keepalive_timeout  120;
+
+    # gzip利用関連。
+    gzip_static       on; # gzipするなら絶対ONで。nginxがすでに圧縮済みのgzipがある場合そいつを配信してCPUに優しくなる
+    gzip              on; # gzip使うぜ宣言
+    gzip_http_version 1.0; # gzip使うhttpのバージョン。1.0で問題なし
+    gzip_vary         on; # http レスポンスに Vary: Accept-Encoding ヘッダを追加する。gzip使うぜ宣言のヘッダ版
+    gzip_comp_level   6; #︎圧縮レベル。9が最大圧縮。どっかで6が無難てみたのでだいたい6
+    gzip_types        text/plain text/xml text/css text/javascript
+                      application/xhtml+xml application/xml
+                      application/rss+xml application/atom_xml
+                      application/javascript application/x-javascript
+                      application/x-httpd-php;
+    gzip_disable      "MSIE [1-6]\.";
+
+    # キャッシュのパス、レベルの指定。
+    fastcgi_cache_path  /var/cache/nginx levels=1:2
+                      keys_zone=one:4m max_size=80m inactive=120m;
+    fastcgi_temp_path   /var/tmp/nginx;
+    # コネクションタイムアウトとみなす秒数。デフォルト60
+    fastcgi_connect_timeout 5;
+    # 転送のタイムアウトとみなす秒数。デフォルト60
+    fastcgi_send_timeout 10;
+    # 読み込みのタイムアウトとみなす秒数。デフォルト60。
+    fastcgi_read_timeout 90;
+    # もしfast cgiからこの状態の返答がきて、キャッシュがあった場合キャッシュを返す指定
+    fastcgi_cache_use_stale error timeout invalid_header http_500 http_503;
+    fastcgi_cache_lock on;
+    fastcgi_cache_lock_timeout 5s;
+
+    add_header  Host               $host;
+    add_header  X-Real-IP          $remote_addr;
+    add_header  X-Forwarded-Host   $host;
+    add_header  X-Forwarded-Server $host;
+    add_header  X-Forwarded-For    $proxy_add_x_forwarded_for;
+    add_header  X-Forwarded-Proto  $http_x_forwarded_proto;
+
+    # 隠しておいたほうがよいヘッダ
+    fastcgi_hide_header X-Pingback;
+    fastcgi_hide_header X-Powered-By;
+
+{% for k,v in nginx_http_params.iteritems() %}
+    {{ k }}  {{ v }};
+{% endfor %}
+
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}
+

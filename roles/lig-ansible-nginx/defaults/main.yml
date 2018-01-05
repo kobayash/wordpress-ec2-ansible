@@ -1,0 +1,42 @@
+---
+nginx_required_directories: []
+nginx_user: "nginx"
+
+nginx_worker_processes: "auto"
+nginx_worker_rlimit_nofile: 4096
+nginx_worker_connections: 1024
+
+nginx_http_params:
+  access_log: "/var/log/nginx/access.log main"
+  error_log: "/var/log/nginx/error.log warn"
+
+nginx_maps: []
+nginx_upstreams: []
+
+nginx_local_ssl_files: []
+
+nginx_site_template: ""
+nginx_sites:
+ - server:
+    file_name: foo
+    listen: 8080
+    server_name: localhost
+    root: "/tmp/site1"
+    location1: {name: /, try_files: "$uri $uri/ /index.html"}
+    location2: {name: /images/, try_files: "$uri $uri/ /index.html"}
+ - server:
+    file_name: bar
+    listen: 9090
+    server_name: ansible
+    root: "/tmp/site2"
+    location1: {name: /, try_files: "$uri $uri/ /index.html"}
+    location2: {name: /images/, try_files: "$uri $uri/ /index.html"}
+
+# for compile
+nginx_use_yum: "yes"
+nginx_download_link: ""
+nginx_compile_options: "--user=nginx --group=nginx --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --with-http_gzip_static_module --with-http_stub_status_module --with-http_ssl_module --with-pcre --with-file-aio --with-http_realip_module"
+nginx_optional_modules: []
+
+nginx_basic_authentifications: []
+

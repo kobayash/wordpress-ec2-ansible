@@ -1,0 +1,58 @@
+---
+- name: Install the nginx packages 
+  yum: name=nginx state=present
+
+- name: Create the directories for site specific configurations
+  file: path=/etc/nginx/{{ item }} state=directory owner=root group=root mode=0755
+  with_items:
+    - "conf.d"
+    - "sites-available"
+    - "sites-enabled"
+    - "password"
+
+- name: Copy the nginx configuration file 
+  template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
+  notify: 
+   - restart nginx
+
+- name: Copy the nginx default configuration file 
+  template: src=default.conf.j2 dest=/etc/nginx/conf.d/default.conf
+  notify: 
+   - restart nginx
+
+- name: Copy the nginx default site configuration file 
+  template: src=default.j2 dest=/etc/nginx/sites-available/default
+  notify: 
+   - restart nginx
+
+- name: Create the link for site enabled specific configurations
+  file: path=/etc/nginx/sites-enabled/default state=link src=/etc/nginx/sites-available/default 
+  notify: 
+   - restart nginx
+
+- name: Set the configurations for sites
+  template: src={{nginx_site_template}} dest=/etc/nginx/sites-available/{{nginx_site_template}}
+  when: nginx_site_template != ""
+  notify: 
+   - restart nginx
+
+- name: Create the links to enable site configurations
+  file: path=/etc/nginx/sites-enabled/{{nginx_site_template}} state=link src=/etc/nginx/sites-available/{{nginx_site_template}}
+  when: nginx_site_template != ""
+  notify: 
+   - reload nginx
+
+- name: copy htpasswd
+  template: src={{ item.template }} dest={{ item.dest }}
+  with_items: "{{nginx_basic_authentifications}}"
+  notify: 
+   - reload nginx
+
+- name: change lib permission
+  file: path={{ item }} state=directory recurse=yes owner={{ nginx_user }} group={{ nginx_user }}
+  with_items:
+    - /var/log/nginx
+
+- name: start the nginx service
+  service: name=nginx state=started enabled=yes
+

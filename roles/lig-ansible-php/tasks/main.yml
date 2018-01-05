@@ -1,0 +1,8 @@
+---
+# tasks file for ansible-php
+
+- name: Install php packages
+  yum: state=latest name={{ item }}
+  with_items: "{{ php_packages }}"
+
+- template: src=php.ini.j2 dest=/etc/php.ini owner=root group=root mode=0644

@@ -1,0 +1,23 @@
+---
+# tasks file for ansible-php-fpm
+- name: Install php-fpm
+  yum: name={{ php_fpm_package_name }} state=latest
+
+- name: Create required directories
+  file: path={{ item }} state=directory group=root owner=root mode=0755
+  with_items:
+    - /var/run/php-fpm
+
+- name: set www.conf
+  template: src=www.conf dest=/etc/php-fpm.d/www.conf owner=root group=root mode=0644
+  notify:
+    - restart php-fpm
+
+- name: set fastcgi_params
+  template: src=fastcgi_params.default.j2 dest=/etc/nginx/fastcgi_params owner=root group=root mode=0644
+  notify:
+    - restart php-fpm
+
+- name: start php-fpm
+  service: name=php-fpm state=started enabled=yes
+

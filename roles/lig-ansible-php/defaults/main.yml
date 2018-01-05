@@ -1,0 +1,19 @@
+---
+php_mysql_default_socket: ""
+php_mysqli_default_socket: ""
+php_pdo_mysql_default_socket: ""
+php_short_open_tag: "Off"
+php_date_timezone: "Asia/Tokyo"
+
+# defaults file for ansible-php
+php_packages:
+  - php-gd
+  - php-mbstring
+  - php-mysql
+  - php-pdo
+  - php-pear
+  - php-pear-PEAR-Command-Packaging
+  - php-soap
+  - php-xml
+  - php-opcache
+  - php-mcrypt

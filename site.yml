@@ -2,14 +2,58 @@
 - hosts: 127.0.0.1
   become: yes
   vars:
+      # localize
       locale: ja_JP.UTF-8
       zone: Asia/Tokyo
       zoneinfo_path: /usr/share/zoneinfo/Asia/Tokyo
+      # nginx
+      nginx_required_directories:
+        - path : "/etc/nginx/password"
+          group: "nginx"
+          owner: "nginx"
+          mode: "0755"
+        - path : "/var/cache/nginx"
+          group: "nginx"
+          owner: "nginx"
+          mode: "0755"
+        - path : "/var/log/nginx"
+          group: "nginx"
+          owner: "nginx"
+          mode: "0755"
+        - path : "/var/lib/nginx"
+          group: "nginx"
+          owner: "nginx"
+          mode: "0755"
+        - path : "/var/www/html"
+          group: "nginx"
+          owner: "nginx"
+          mode: "0755"
       nginx_site_template: "wordpress"
       nginx_basic_authentifications:
         - template: basic
           dest: /etc/nginx/password/basic
+      # php
+      php_enablerepo: ""
+      php_packages:
+        - php71
+        - php71-mbstring
+        - php71-mcrypt
+        - php71-mysqlnd
+        - php71-gd
+        - php71-pdo
+        - php71-pecl-imagick
+      # php-fpm
+      php_fpm_enablerepo: ""
+      php_fpm_package_name: "php71-fpm"
+      php_fpm_listen: "/var/run/php-fpm.sock"
+      php_fpm_user: "nginx"
+      php_fpm_group: "nginx"
   roles:
     - role: lig-ansible-localize
+      tags: ['web', 'nginx']
     - role: lig-ansible-nginx
+      tags: ['web', 'nginx']
+    - role: lig-ansible-php
+      tags: ['web', 'nginx']    
+    - role: lig-ansible-php-fpm
       tags: ['web', 'nginx']

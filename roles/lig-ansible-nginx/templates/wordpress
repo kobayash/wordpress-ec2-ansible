@@ -47,12 +47,13 @@ server {
 
   # フロント側php
   location ~* \.php$ {
-    auth_basic "Restricted";
-    auth_basic_user_file "/etc/nginx/password/basic";
+    #auth_basic "Restricted";
+    #auth_basic_user_file "/etc/nginx/password/basic";
     set $mobile '';
     if ($http_user_agent ~* '(iPhone|iPod|incognito|webmate|Android|dream|CUPCAKE|froyo|BlackBerry|webOS|s8000|bada|IEMobile|Googlebot\\-Mobile|AdsBot\\-Google)') { set $mobile '@smartphone'; }
     if ($http_cookie ~* "wptouch(_switch_cookie=normal|-pro-view=desktop)") { set $mobile "@smartphone.desktop"; }
-    set $do_not_cache 0;
+    #set $do_not_cache 0;
+    set $do_not_cache 1;
     if ($http_cookie ~* "comment_author_|wordpress_( !test_cookie)|wp-postpass_" ) { set $do_not_cache 1; }
     if ($request_method = POST) { set $do_not_cache 1; }
     fastcgi_no_cache     $do_not_cache;

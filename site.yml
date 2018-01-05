@@ -1,0 +1,9 @@
+---
+- hosts: 127.0.0.1
+  become: yes
+  vars:
+      locale: ja_JP.UTF-8
+      zone: Asia/Tokyo
+      zoneinfo_path: /usr/share/zoneinfo/Asia/Tokyo
+  roles:
+    - role: lig-ansible-localize
